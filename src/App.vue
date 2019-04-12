@@ -1,28 +1,40 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
-  </div>
+  <v-app style="background-color: #FAFAFA">
+    <v-toolbar app color="deep-orange lighten-2">
+      <v-toolbar-title class="headline">
+        <v-icon class="mr-2">developer_board</v-icon>
+        <span>Remote</span>
+        <span class="font-weight-light">Forensic</span>
+        <span class="font-weight-thin">Appliance</span>
+      </v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-btn
+        flat
+      >
+        <v-icon>settings</v-icon>
+        <span class="mr-1"></span>
+        <span class="mr-2">Settings</span>
+      </v-btn>
+    </v-toolbar>
+    <v-content>
+      <CustomStepper msg="Users"/>
+    </v-content>
+  </v-app>
 </template>
+<!--Insert footer-->
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import CustomStepper from './components/CustomStepper'
 
 export default {
-  name: 'app',
+  name: 'App',
   components: {
-    HelloWorld
+    CustomStepper: CustomStepper
+  },
+  data () {
+    return {
+      //
+    }
   }
 }
 </script>
-
-<style>
-#app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
