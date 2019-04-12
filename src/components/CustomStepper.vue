@@ -17,7 +17,11 @@
                     <v-stepper-content step="1">
                         <v-card class="mb-3"
                                 color="grey lighten-5">
-                            <v-card-title>Choose a device to read data and create an image from.</v-card-title>
+                                <v-layout >
+                                <v-card-title>Choose a device to read data and create an image from.</v-card-title>
+                                    <v-spacer></v-spacer>
+                                    <v-btn flat icon color="deep-orange lighten-2" @click="reloadPage"><v-icon>cached</v-icon></v-btn>
+                                </v-layout>
                             <v-select chips prepend-icon="sd_storage" class="mr-3 ml-3" v-model="select" item-value="serial_number" v-bind:items="devices" persistent-hint
                                       return-object
                                       single-line label="Select">
@@ -106,6 +110,10 @@
           computePartitionUsedPercentage: function (bytesAsStringPart,bytesAsStringDevice)
           {
             return (parseInt(bytesAsStringPart) / parseInt(bytesAsStringDevice)) * 100
+          },
+
+          reloadPage(){
+              window.location.reload()
           }
       },
 
