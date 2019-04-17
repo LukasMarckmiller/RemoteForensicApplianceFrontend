@@ -1,7 +1,7 @@
 <template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
  <div class="customStepper">
+     <v-layout>
     <v-container fluid>
-      <v-layout align-center justify-center>
         <v-flex xs12 md12 >
             <v-stepper light v-model="e1">
                 <v-stepper-header>
@@ -72,19 +72,25 @@
                         <v-btn flat @click="e1 = 1">Back</v-btn>
                     </v-stepper-content>
                     <v-stepper-content step="3">
-                        <v-card class="mb-5"
-                                color="grey lighten-5">
-                        </v-card>
-                        <v-btn color="deep-orange lighten-2">Start</v-btn>
-                        <v-btn flat @click="e1 = 2">Back</v-btn>
+                            <v-layout >
+                                <v-flex xs12 sm6>
+                                    <v-textarea class="ml-3" height="500" box label="Output Device Log" readonly="true" loading="false" v-model="consoleOutputDeviceOutput" no-resize>
+                                    </v-textarea>
+                                </v-flex>
 
+                                <v-flex xs12 sm6>
+                                    <v-textarea class="ml-3" height="500" box label="Input Device Log" readonly="true" loading="false" v-model="consoleInputDeviceOutput" no-resize>
+                                    </v-textarea>
+                                </v-flex>
+                            </v-layout>
+                        <v-btn color="deep-orange lighten-2" @click="postImageJobAndRun(select.name)">Start</v-btn>
+                        <v-btn flat @click="e1 = 2">Back</v-btn>
                     </v-stepper-content>
                 </v-stepper-items>
             </v-stepper>
         </v-flex>
-
-      </v-layout>
     </v-container>
+     </v-layout>
  </div>
 </template>
 
@@ -96,9 +102,14 @@
       },
       data() {
           return {
+              currentJobId : "",
+              consoleOutputDeviceOutput : null,
+              consoleInputDeviceOutput : null,
+              pollingResult: null,
               devices : null,
               e1: 0,
               select: 'defaultValue',
+              pollinHandler : null,
           }
       },
 
@@ -114,11 +125,30 @@
 
           reloadPage(){
               window.location.reload()
+          },
+
+          postImageJobAndRun : function(path){
+              this.consoleInputDeviceOutput = ""
+              this.consoleOutputDeviceOutput = ""
+
+             axios.post('http://localhost:8000/image',{path : "/dev/" + path}).then(response => (this.currentJobId = response.data))
+             this.pollinHandler = setInterval(() => {
+                  axios.get('http://localhost:8000/image/' + this.currentJobId).then(response => (this.pollingResult = response.data))
+                 this.consoleOutputDeviceOutput = this.pollingResult.commandOfOutput
+                 this.consoleInputDeviceOutput = this.pollingResult.commandIfOutput
+                 if (!this.pollingResult.running){
+                     clearInterval(this.pollinHandler)
+                 }
+              }, 1000)
           }
       },
 
       created() {
          axios.get('http://localhost:8000/media').then(response => (this.devices = response.data))
+      },
+
+      beforeDestroy() {
+          clearInterval(this.pollinHandler)
       }
   }
 </script>
