@@ -16,7 +16,7 @@
                 <v-stepper-items>
                     <v-stepper-content step="1">
                         <v-card class="mb-3"
-                                color="grey lighten-5">
+                                color="grey lighten-4">
                                 <v-layout >
                                 <v-card-title>Choose a device to read data and create an image from.</v-card-title>
                                     <v-spacer></v-spacer>
@@ -36,7 +36,7 @@
                                 <v-card-title class="primary white--text ">
                                     Partitions
                                 </v-card-title>
-                                <v-list class="grey lighten-5">
+                                <v-list class="grey lighten-4">
                                     <v-list-tile
                                         v-for="item in select.partitions"
                                         :key="item.name">
@@ -58,13 +58,13 @@
                             </b-progress>
                             </v-card>
                         </v-card>
-                        <v-btn color="deep-orange lighten-2" @click="e1 = 2">
+                        <v-btn color="deep-orange lighten-2" v-bind:disabled="select === ''" @click="e1 = 2">
                             Next
                         </v-btn>
                     </v-stepper-content>
                     <v-stepper-content step="2">
                         <v-card class="mb-5"
-                                color="grey lighten-5">
+                                color="grey lighten-4">
                         </v-card>
                         <v-btn color="deep-orange lighten-2"  @click="e1 = 3">
                             Next
@@ -72,22 +72,33 @@
                         <v-btn flat @click="e1 = 1">Back</v-btn>
                     </v-stepper-content>
                     <v-stepper-content step="3">
+                        <v-expansion-panel popout>
+                            <v-expansion-panel-content class="grey lighten-4">
+                                <template v-slot:actions>
+                                    <v-icon color="deep-orange lighten-2">expand_more</v-icon>
+                                </template>
+                                <template v-slot:header>
+                                    <div>Image Job Console Log</div>
+                                </template>
                             <v-layout >
                                 <v-flex xs12 sm6>
-                                    <v-textarea class="ml-3" height="500" box label="Output Device Log" readonly="true" loading="false" v-model="consoleOutputDeviceOutput" no-resize>
+                                    <v-textarea class="ml-3" height="500" box label="Output Device Log" readonly loading="false" v-model="consoleOutputDeviceOutput" no-resize>
                                     </v-textarea>
                                 </v-flex>
 
                                 <v-flex xs12 sm6>
-                                    <v-textarea class="ml-3" height="500" box label="Input Device Log" readonly="true" loading="false" v-model="consoleInputDeviceOutput" no-resize>
+                                    <v-textarea class="ml-3" height="500" box label="Input Device Log" readonly loading="false" v-model="consoleInputDeviceOutput" no-resize>
                                     </v-textarea>
                                 </v-flex>
                             </v-layout>
+                            </v-expansion-panel-content>
+                        </v-expansion-panel>
                         <v-btn color="deep-orange lighten-2" @click="postImageJobAndRun(select.name)">Start</v-btn>
                         <v-btn flat @click="e1 = 2">Back</v-btn>
                     </v-stepper-content>
                 </v-stepper-items>
             </v-stepper>
+            <v-progress-linear class="mt-0" :indeterminate="e1 === 3 && running" :color="e1 ===3 && finisedJob ? 'green' : 'deep-orange lighten-2'" :value="e1 === 3 && finisedJob ? 100 : 0"></v-progress-linear>
         </v-flex>
     </v-container>
      </v-layout>
@@ -102,54 +113,61 @@
       },
       data() {
           return {
+              running : false,
+              finisedJob :false,
               currentJobId : "",
               consoleOutputDeviceOutput : null,
               consoleInputDeviceOutput : null,
               pollingResult: null,
               devices : null,
               e1: 0,
-              select: 'defaultValue',
+              select: "",
               pollinHandler : null,
           }
       },
 
-      methods:{
-          parseDeviceCapazityinGB : function (bytesAsString){
+      methods: {
+          parseDeviceCapazityinGB: function (bytesAsString) {
               return Math.round(parseInt(bytesAsString) / 1073741824).toString();
           },
 
-          computePartitionUsedPercentage: function (bytesAsStringPart,bytesAsStringDevice)
-          {
-            return (parseInt(bytesAsStringPart) / parseInt(bytesAsStringDevice)) * 100
+          computePartitionUsedPercentage: function (bytesAsStringPart, bytesAsStringDevice) {
+              return (parseInt(bytesAsStringPart) / parseInt(bytesAsStringDevice)) * 100
           },
 
-          reloadPage(){
+          reloadPage() {
               window.location.reload()
           },
 
-          postImageJobAndRun : function(path){
+          postImageJobAndRun: function (path) {
+              this.currentJobId = ""
               this.consoleInputDeviceOutput = ""
               this.consoleOutputDeviceOutput = ""
+              this.finisedJob = false
 
-             axios.post('http://localhost:8000/image',{path : "/dev/" + path}).then(response => (this.currentJobId = response.data))
-             this.pollinHandler = setInterval(() => {
-                  axios.get('http://localhost:8000/image/' + this.currentJobId).then(response => (this.pollingResult = response.data))
-                 this.consoleOutputDeviceOutput = this.pollingResult.commandOfOutput
-                 this.consoleInputDeviceOutput = this.pollingResult.commandIfOutput
-                 if (!this.pollingResult.running){
-                     clearInterval(this.pollinHandler)
-                 }
-              }, 1000)
+              axios.post('http://localhost:8000/image', {path: "/dev/" + path}).then(response => {this.currentJobId = response.data
+                  this.polling()
+                  this.pollinHandler = setInterval(this.polling, 3000)})
+
+          },
+
+          polling: function () {
+
+              axios.get('http://localhost:8000/image/' + this.currentJobId).then(response => {
+                  this.pollingResult = response.data
+                  this.consoleOutputDeviceOutput = this.pollingResult.commandOfOutput
+                  this.consoleInputDeviceOutput = this.pollingResult.commandIfOutput
+                  this.running = this.pollingResult.running
+                  if (!this.running) {
+                      clearInterval(this.pollinHandler)
+                      this.finisedJob = true
+                  }})
           }
       },
 
       created() {
          axios.get('http://localhost:8000/media').then(response => (this.devices = response.data))
       },
-
-      beforeDestroy() {
-          clearInterval(this.pollinHandler)
-      }
   }
 </script>
 
