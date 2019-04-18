@@ -82,12 +82,12 @@
                                 </template>
                             <v-layout >
                                 <v-flex xs12 sm6>
-                                    <v-textarea class="ml-3" height="500" box label="Output Device Log" readonly loading="false" v-model="consoleOutputDeviceOutput" no-resize>
+                                    <v-textarea class="ml-3" height="400" box label="Output Device Log" readonly loading="false" v-model="consoleOutputDeviceOutput" no-resize>
                                     </v-textarea>
                                 </v-flex>
 
                                 <v-flex xs12 sm6>
-                                    <v-textarea class="ml-3" height="500" box label="Input Device Log" readonly loading="false" v-model="consoleInputDeviceOutput" no-resize>
+                                    <v-textarea class="ml-3" height="400" box label="Input Device Log" readonly loading="false" v-model="consoleInputDeviceOutput" no-resize>
                                     </v-textarea>
                                 </v-flex>
                             </v-layout>
@@ -145,7 +145,7 @@
               this.consoleOutputDeviceOutput = ""
               this.finisedJob = false
 
-              axios.post('http://localhost:8000/image', {path: "/dev/" + path}).then(response => {this.currentJobId = response.data
+              axios.post('http://localhost:8000/image', {path: path}).then(response => {this.currentJobId = response.data
                   this.polling()
                   this.pollinHandler = setInterval(this.polling, 3000)})
 
