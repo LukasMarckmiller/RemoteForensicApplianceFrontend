@@ -107,7 +107,8 @@
 
 <script>
     import axios from "axios"
-  export default {
+
+    export default {
       props: {
           msg: String
       },
@@ -166,7 +167,11 @@
       },
 
       created() {
-         axios.get('http://localhost:8000/media').then(response => (this.devices = response.data))
+         axios.get('http://localhost:8000/media').then(response => {
+             this.devices = response.data
+             if (this.devices !== null)
+                 this.select = this.devices[0]
+         })
       },
   }
 </script>
