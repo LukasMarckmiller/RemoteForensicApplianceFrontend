@@ -311,13 +311,13 @@
                           this.lockSmartMode = true;
                           this.toogleSnackBarSmartModeValue(this.noRemoteConnectionText)
                       }
-                      else
+                      else {
                           this.smartMode = true;
+                      }
 
                       this.smartModeProgress = false;
                       this.transferModeComputed = true
                   })
-
               }
           }
       },
