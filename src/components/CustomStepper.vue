@@ -172,7 +172,7 @@
                     text-xs-center>
                 Calculating best transfer options
             </v-flex>
-            <v-progress-linear v-if="e1 === 3" class="mt-0" :indeterminate="running" :color="finisedJob ? 'green' : 'deep-orange lighten-2'" :value="finisedJob ? 100 : 0"></v-progress-linear>
+            <v-progress-linear v-if="e1 === 3" class="mt-0" :indeterminate="running" :color="finisedJob ? transmissionError === '' ? 'green' : 'red' : 'deep-orange lighten-2'" :value="finisedJob ? 100 : 0"></v-progress-linear>
         </v-flex>
     </v-container>
      </v-layout>
@@ -219,6 +219,7 @@
               transferModeComputed : false,
               cachedImageOptions: null,
               textarea: null,
+              transmissionError: "",
           }
       },
       watch: {
@@ -257,6 +258,7 @@
 
                HTTP.post('image', {path: path, image_option: this.cachedImageOptions.image_option, mount:this.mount}).then(response => {this.currentJobId = response.data;
                   this.running = true
+
                   this.polling();
                   this.pollinHandler = setInterval(this.polling, 3000)})
 
@@ -279,8 +281,11 @@
                   this.consoleOutputDeviceOutput += this.pollingResult.commandOfOutput;
                   this.consoleInputDeviceOutput += this.pollingResult.commandIfOutput;
                   this.running = this.pollingResult.running;
+                  //Transmission job finished or crashed
                   if (!this.running) {
                       clearInterval(this.pollinHandler);
+                      this.transmissionError =  this.pollingResult.error
+                      //if no error get and set Hashes here
                       this.finisedJob = true
                   }})
           },
