@@ -4,7 +4,7 @@
              class="black--text"
              v-model="snackbarInfoSmartMode"
              color="grey lighten-4"
-             timeout="6000"
+             :timeout=6000
              multi-line
              top>
              {{snackbarContent}}
@@ -119,7 +119,7 @@
                         <v-btn flat @click="e1 = 1">Back</v-btn>
                     </v-stepper-content>
                     <v-stepper-content step="3">
-                        <v-expansion-panel value="1" popout >
+                        <v-expansion-panel :value="1" popout >
                             <v-expansion-panel-content>
                                 <template v-slot:actions>
                                     <v-icon color="deep-orange lighten-2">expand_more</v-icon>
@@ -147,18 +147,19 @@
                                 </template>
                             <v-layout >
                                 <v-flex xs12 sm6>
-                                    <v-textarea class="ml-3" height="400" box label="Output Device Log" readonly loading="false" v-model="consoleOutputDeviceOutput" no-resize>
+                                    <v-textarea id="odl" class="ml-3" height="400" box label="Output Device Log" readonly loading="false" v-model="consoleOutputDeviceOutput" no-resize>
                                     </v-textarea>
                                 </v-flex>
 
                                 <v-flex xs12 sm6>
-                                    <v-textarea class="ml-3" height="400" box label="Input Device Log" readonly loading="false" v-model="consoleInputDeviceOutput" no-resize>
+                                    <v-textarea id="idl" class="ml-3" height="400" box label="Input Device Log" readonly loading="false" v-model="consoleInputDeviceOutput" no-resize>
                                     </v-textarea>
                                 </v-flex>
                             </v-layout>
                             </v-expansion-panel-content>
                         </v-expansion-panel>
-                        <v-btn color="deep-orange lighten-2" @click="postImageJobAndRun(selectedInputDevice.name)">Start</v-btn>
+                        <v-btn v-if="!running" color="deep-orange lighten-2" @click="postImageJobAndRun(selectedInputDevice.name)">Start</v-btn>
+                        <v-btn v-if="running" color="deep-orange lighten-2" @click="cancelImageJob">Cancel</v-btn>
                         <v-btn flat @click="e1 = 2">Back</v-btn>
                     </v-stepper-content>
                 </v-stepper-items>
@@ -201,11 +202,10 @@
               pollingResult: null,
               devices : null,
               mounts: null,
-              mount: "",
+              mount: null,
               e1: 1,
               selectedInputDevice: "",
               pollinHandler : null,
-              imageOptions : null,
               cachedDiskUsage : {
                   "all": 0,
                   "used": 0,
@@ -218,6 +218,7 @@
               smartModeProgress : false,
               transferModeComputed : false,
               cachedImageOptions: null,
+              textarea: null,
           }
       },
       watch: {
@@ -254,18 +255,29 @@
               this.consoleOutputDeviceOutput = "";
               this.finisedJob = false;
 
-               HTTP.post('image', {path: path}).then(response => {this.currentJobId = response.data;
+               HTTP.post('image', {path: path, image_option: this.cachedImageOptions.image_option, mount:this.mount}).then(response => {this.currentJobId = response.data;
+                  this.running = true
                   this.polling();
                   this.pollinHandler = setInterval(this.polling, 3000)})
 
+          },
+
+          cancelImageJob: function(){
+              HTTP.delete('image/' + this.currentJobId).then(response => {
+                  if (response.status === 200){
+                      this.running = false
+                      clearInterval(this.pollinHandler)
+                      this.finisedJob = false
+                  }
+              })
           },
 
           polling: function () {
 
               HTTP.get('image/' + this.currentJobId).then(response => {
                   this.pollingResult = response.data;
-                  this.consoleOutputDeviceOutput = this.pollingResult.commandOfOutput;
-                  this.consoleInputDeviceOutput = this.pollingResult.commandIfOutput;
+                  this.consoleOutputDeviceOutput += this.pollingResult.commandOfOutput;
+                  this.consoleInputDeviceOutput += this.pollingResult.commandIfOutput;
                   this.running = this.pollingResult.running;
                   if (!this.running) {
                       clearInterval(this.pollinHandler);
