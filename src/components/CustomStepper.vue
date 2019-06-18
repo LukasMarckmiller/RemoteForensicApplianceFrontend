@@ -130,9 +130,10 @@
                                 <v-card class="ml-2">
                                     <v-card-text v-if="cachedImageOptions !== null">
                                         <p>Estimated Transmission Time : <i>{{getTimeStringFromSeconds(this.cachedImageOptions.estimated_secs)}}</i> </p>
-                                        <p>Transfer Option : <i>{{this.cachedImageOptions.image_option.type === imageTypeFull ? "Full image" : "Certain Artifacts"}}</i></p>
+                                        <p>Transfer Option : <i>{{cachedImageOptions.image_option.type === imageTypeFull ? "Full image" : "Certain Artifacts"}}</i></p>
                                         <p>Selected Input Device : <i>{{ selectedInputDevice.name}} (Vendor: {{ selectedInputDevice.vendor}}, Model: {{selectedInputDevice.model}}, Size: {{parseDeviceCapazityinGB(selectedInputDevice.size_bytes)}} GB)</i></p>
                                         <p>Selecte Output: <i>{{cachedImageOptions.image_option.target === imageTargetLocal ?  mount.mount_point + " (Size " + parseDeviceCapazityinGB(mount.size_bytes) + "GB)" : "Remote transmission" }}</i></p>
+                                        <p>Job ID: <i>{{currentJobId}}</i></p>
                                     </v-card-text>
                                 </v-card>
                             </v-expansion-panel-content>
@@ -147,20 +148,27 @@
                                 </template>
                             <v-layout >
                                 <v-flex xs12 sm6>
-                                    <v-textarea id="odl" class="ml-3" height="400" box label="Output Device Log" readonly loading="false" v-model="consoleOutputDeviceOutput" no-resize>
+                                    <v-textarea id="idl" ref="idl" class="ml-3" height="400" box label="Input Device Log" readonly loading="false" v-model="consoleInputDeviceOutput" no-resize>
                                     </v-textarea>
                                 </v-flex>
 
                                 <v-flex xs12 sm6>
-                                    <v-textarea id="idl" class="ml-3" height="400" box label="Input Device Log" readonly loading="false" v-model="consoleInputDeviceOutput" no-resize>
+                                    <v-textarea id="odl" ref="odl" class="ml-3" height="400" box label="Output Device Log" readonly loading="false" v-model="consoleOutputDeviceOutput" no-resize>
                                     </v-textarea>
                                 </v-flex>
                             </v-layout>
                             </v-expansion-panel-content>
                         </v-expansion-panel>
+                        <v-layout class="mt-3" align-center justify-space-around row>
+                            {{hashes.md_5_input}} <v-icon color="green" v-if="finisedJob && hashResult.md_5_valid">check_circle_outline</v-icon> <v-icon color="red" v-if="finisedJob && !hashResult.md_5_valid">highlight_off</v-icon> {{hashes.md_5_output}}
+                        </v-layout>
+                        <v-layout class="mb-3" align-center justify-space-around row>
+                            {{hashes.sha_256_input}} <v-icon color="green" v-if="finisedJob && hashResult.sha_256_valid">check_circle_outline</v-icon> <v-icon color="red" v-if="finisedJob && !hashResult.sha_256_valid">highlight_off</v-icon> {{hashes.sha_256_output}}
+                        </v-layout>
                         <v-btn v-if="!running" color="deep-orange lighten-2" @click="postImageJobAndRun(selectedInputDevice.name)">Start</v-btn>
                         <v-btn v-if="running" color="deep-orange lighten-2" @click="cancelImageJob">Cancel</v-btn>
                         <v-btn flat @click="e1 = 2">Back</v-btn>
+
                     </v-stepper-content>
                 </v-stepper-items>
             </v-stepper>
@@ -220,6 +228,16 @@
               cachedImageOptions: null,
               textarea: null,
               transmissionError: "",
+              hashes: {
+                  md_5_input: "",
+                  md_5_output: "",
+                  sha_256_input: "",
+                  sha_256_output: "",
+              },
+              hashResult:{
+                  md_5_valid: false,
+                  sha_256_valid: false,
+              }
           }
       },
       watch: {
@@ -257,7 +275,7 @@
               this.finisedJob = false;
 
                HTTP.post('image', {path: path, image_option: this.cachedImageOptions.image_option, mount:this.mount}).then(response => {this.currentJobId = response.data;
-                  this.running = true
+                  this.running = true;
 
                   this.polling();
                   this.pollinHandler = setInterval(this.polling, 3000)})
@@ -267,8 +285,8 @@
           cancelImageJob: function(){
               HTTP.delete('image/' + this.currentJobId).then(response => {
                   if (response.status === 200){
-                      this.running = false
-                      clearInterval(this.pollinHandler)
+                      this.running = false;
+                      clearInterval(this.pollinHandler);
                       this.finisedJob = false
                   }
               })
@@ -281,10 +299,13 @@
                   this.consoleOutputDeviceOutput += this.pollingResult.commandOfOutput;
                   this.consoleInputDeviceOutput += this.pollingResult.commandIfOutput;
                   this.running = this.pollingResult.running;
+
                   //Transmission job finished or crashed
                   if (!this.running) {
                       clearInterval(this.pollinHandler);
-                      this.transmissionError =  this.pollingResult.error
+                      this.transmissionError =  this.pollingResult.error;
+                      this.hashes = this.pollingResult.hashes;
+                      this.hashResult = this.pollingResult.hash_result;
                       //if no error get and set Hashes here
                       this.finisedJob = true
                   }})
@@ -320,6 +341,7 @@
 
               if (this.selectedInputDevice !== ""){
                   this.smartModeProgress = true;
+
                   HTTP.post('media/transfer',{name:this.selectedInputDevice.name, size:this.selectedInputDevice.size_bytes}).then(response => {
                         this.cachedImageOptions = response.data;
                       if (this.cachedImageOptions.image_option.target === this.imageTargetLocal)
@@ -348,6 +370,9 @@
 
           HTTP.get('mounted').then(response => {
               this.mounts = response.data
+              if (this.mounts !== null){
+                  this.mount = this.mounts[0]
+              }
           })
       },
   }
