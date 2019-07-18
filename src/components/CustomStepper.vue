@@ -28,8 +28,8 @@
                 </v-stepper-header>
                 <v-stepper-items>
                     <v-stepper-content step="1">
-                        <v-layout >
-                            <v-flex xs12 sm6>
+                        <v-layout>
+                            <v-flex xs12 sm12>
                         <v-card class="mb-3"
                                 color="grey lighten-4">
                                 <v-layout >
@@ -74,38 +74,33 @@
                             </v-card>
                         </v-card>
                             </v-flex>
-                            <v-flex xs12 sm6>
-                                <v-card class="ml-3"
+                            <v-flex>
+                                <v-card v-if="!this.remoteTransmission" class="ml-3"
                                         color="grey lighten-4">
-
                                     <v-layout >
                                         <v-card-title>Choose a location to save the image to.</v-card-title>
                                         <v-spacer></v-spacer>
                                         <v-btn flat icon color="deep-orange lighten-2" @click="reloadPage"><v-icon>cached</v-icon></v-btn>
                                     </v-layout>
-                                    <v-switch :disabled="lockSmartMode" class="ml-3" color="orange darken-3" @change="toogleSnackBarSmartModeValue(smartModeInfoText)"
-                                              hide-details :label="`SmartMode: ${smartMode == true ? 'On' : 'Off'}`"
-                                              v-model="smartMode">
-                                    </v-switch>
-                                    <v-select v-if="!smartMode" chips prepend-icon="sd_storage" class="mr-3 ml-3" v-model="mount" v-on:change="diskUsage(mount.mount_point)" item-value="serial_number" v-bind:items="mounts" persistent-hint
+                                    <v-select v-if="mounts != null" chips prepend-icon="sd_storage" class="mr-3 ml-3" v-model="mount" v-on:change="diskUsage(mount.mount_point)" item-value="serial_number" v-bind:items="mounts" persistent-hint
                                               return-object
                                               single-line>
-                                        <template v-if="mount !== ''" slot="selection" slot-scope="data">
+                                        <template v-if="mount !== null" slot="selection" slot-scope="data">
                                             <v-chip>{{ data.item.mount_point}}</v-chip>
                                         </template>
 
-                                        <template v-if="devices !== null" slot="item" slot-scope="data">
+                                        <template v-if="mounts !== null" slot="item" slot-scope="data">
                                             {{ data.item.mount_point}} (Size: {{parseDeviceCapazityinGB(data.item.size_bytes)}} GB, Type: {{ data.item.type}}, Read-Only: {{data.item.read_only}})
                                         </template>
                                     </v-select>
-                                    <b-progress v-if="mount !== '' && !smartMode" class="mt-2">
+                                    <b-progress v-if="mount !== null && !smartMode" class="mt-2">
                                         <b-progress-bar :key="free" :value="computePartitionUsedPercentage(cachedDiskUsage.free, cachedDiskUsage.all)" variant="success">Free {{parseDeviceCapazityinGB(cachedDiskUsage.free)}}GB</b-progress-bar>
                                         <b-progress-bar :key="used" :value="computePartitionUsedPercentage(cachedDiskUsage.used, cachedDiskUsage.all)" variant="primary">Used {{parseDeviceCapazityinGB(cachedDiskUsage.used)}}GB</b-progress-bar>
                                     </b-progress>
                                 </v-card>
                             </v-flex>
                         </v-layout>
-                        <v-btn color="deep-orange lighten-2"  v-bind:disabled="selectedInputDevice === '' || (smartMode === true && transferModeComputed === false || smartMode === false && mount === '')" @click="e1 = 3">
+                        <v-btn color="deep-orange lighten-2"  v-bind:disabled="selectedInputDevice === '' || (smartMode === true && transferModeComputed === false || smartMode === false && mount === null)" @click="e1 = 3">
                             Next
                         </v-btn>
                     </v-stepper-content>
@@ -128,7 +123,7 @@
                                     <div><b>Summary</b></div>
                                 </template>
                                 <v-card class="ml-2">
-                                    <v-card-text v-if="cachedImageOptions !== null">
+                                    <v-card-text v-if="cachedImageOptions !== null && mount !== null">
                                         <p>Estimated Transmission Time : <i>{{getTimeStringFromSeconds(this.cachedImageOptions.estimated_secs)}}</i> </p>
                                         <p>Transfer Option : <i>{{cachedImageOptions.image_option.type === imageTypeFull ? "Full image" : "Certain Artifacts"}}</i></p>
                                         <p>Selected Input Device : <i>{{ selectedInputDevice.name}} (Vendor: {{ selectedInputDevice.vendor}}, Model: {{selectedInputDevice.model}}, Size: {{parseDeviceCapazityinGB(selectedInputDevice.size_bytes)}} GB)</i></p>
@@ -178,7 +173,7 @@
                     xs12
                     subtitle-1
                     text-xs-center>
-                Calculating best transfer options
+                <span class="font-weight-medium"> Calculating best transfer options</span>
             </v-flex>
             <v-progress-linear v-if="e1 === 3" class="mt-0" :indeterminate="running" :color="finisedJob ? transmissionError === '' ? 'green' : 'red' : 'deep-orange lighten-2'" :value="finisedJob ? 100 : 0"></v-progress-linear>
         </v-flex>
@@ -198,10 +193,9 @@
           return {
               snackbarInfoSmartMode: false,
               snackbarContent : "",
-              smartModeInfoText : "If SmartMode is turned on, the application decides itself weather to send the full image of the input device or just specific artifacts to the CERT servers.",
               noRemoteConnectionText : "No connection to the servers possible, please plug in and specify an output device or use the internal storage to continue the image process.",
               smartMode: true,
-              lockSmartMode : false,
+              remoteTransmission :true,
               running : false,
               finisedJob :false,
               currentJobId : "",
@@ -246,6 +240,21 @@
           }
       },
       methods: {
+          setCompressed: function(value){
+            this.cachedImageOptions.image_option.compressed = value
+          },
+
+          setSmartMode: function (value){
+              this.smartMode = value
+
+              if (!value){
+                  this.remoteTransmission = false
+                  this.cachedImageOptions.image_option.target = this.imageTargetLocal
+              }
+              else{
+                  this.triggerSmartMode()
+              }
+          },
           parseDeviceCapazityinGB: function (bytesAsString) {
               return Math.round(parseInt(bytesAsString) / 1073741824).toString();
           },
@@ -312,7 +321,7 @@
           },
 
           diskUsage: function(mountPoint){
-              if (mountPoint === "") {
+              if (mountPoint === "" || mountPoint === null) {
                   return
               }
 
@@ -323,7 +332,7 @@
 
           toogleSnackBarSmartModeValue : function (message){
               let val = this.snackbarInfoSmartMode;
-              this.snackbarContent = message;
+              this.snackbarContent = message
 
               if (this.snackbarInfoSmartMode){
                   this.snackbarInfoSmartMode = false;
@@ -337,7 +346,10 @@
 
           triggerSmartMode : function (){
               this.transferModeComputed = false;
-              this.smartMode = true;
+
+              if (this.smartMode === false){
+                  return
+              }
 
               if (this.selectedInputDevice !== ""){
                   this.smartModeProgress = true;
@@ -346,14 +358,12 @@
                         this.cachedImageOptions = response.data;
                       if (this.cachedImageOptions.image_option.target === this.imageTargetLocal)
                       {
-                          this.smartMode = false;
-                          this.lockSmartMode = true;
+                          this.remoteTransmission = false
                           this.toogleSnackBarSmartModeValue(this.noRemoteConnectionText)
                       }
-                      else {
-                          this.smartMode = true;
+                      else{
+                          this.remoteTransmission = true
                       }
-
                       this.smartModeProgress = false;
                       this.transferModeComputed = true
                   })
