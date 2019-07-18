@@ -48,13 +48,18 @@
                                 </template>
                             </v-select>
                             <v-card>
-                                <v-card-title class="deep-orange lighten-2">
-                                    Partitions
-                                </v-card-title>
-                                <v-list class="grey lighten-4">
+                                <v-toolbar color="deep-orange lighten-2" dense>
+                                    <v-btn icon @click="toggleExpandedPartitions()">
+                                        <v-icon>{{expandedParts ? 'expand_less' : 'expand_more'}}</v-icon>
+                                    </v-btn>
+                                    <v-toolbar-title class="ml-1" style="font-size:medium">Partitions</v-toolbar-title>
+                                    <v-spacer></v-spacer>
+                                </v-toolbar>
+                                <v-list v-if="expandedParts" class="grey lighten-4">
                                     <v-list-tile
                                         v-for="item in selectedInputDevice.partitions"
                                         :key="item.name">
+
                                         <v-icon class="mr-3">storage</v-icon>
                                         <v-list-tile-content>
                                             <v-list-tile-title v-text="item.name + ' (' + parseDeviceCapazityinGB(item.size_bytes)+ 'GB)'"></v-list-tile-title>
@@ -62,13 +67,13 @@
                                         </v-list-tile-content>
                                     </v-list-tile>
                                 </v-list>
-                            <b-progress class="mt-2">
+                            <b-progress v-if="expandedParts" class="mt-2">
                                 <template v-for="(child, index) in selectedInputDevice.partitions">
-                                    <b-progress-bar :key="child" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-if="index <= 0" variant="primary">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
-                                    <b-progress-bar :key="child" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-else-if="index === 1" variant="danger">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
-                                    <b-progress-bar :key="child" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-else-if="index === 2" variant="warning">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
-                                    <b-progress-bar :key="child" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-else-if="index === 3" variant="info">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
-                                    <b-progress-bar :key="child" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-else-if="index >= 4" variant="success">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-if="index <= 0" variant="primary">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-else-if="index === 1" variant="danger">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-else-if="index === 2" variant="warning">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-else-if="index === 3" variant="info">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-else-if="index >= 4" variant="success">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
                                 </template>
                             </b-progress>
                             </v-card>
@@ -93,7 +98,7 @@
                                             {{ data.item.mount_point}} (Size: {{parseDeviceCapazityinGB(data.item.size_bytes)}} GB, Type: {{ data.item.type}}, Read-Only: {{data.item.read_only}})
                                         </template>
                                     </v-select>
-                                    <b-progress v-if="mount !== null && !smartMode" class="mt-2">
+                                    <b-progress v-if="mount !== null" class="mt-2">
                                         <b-progress-bar :key="free" :value="computePartitionUsedPercentage(cachedDiskUsage.free, cachedDiskUsage.all)" variant="success">Free {{parseDeviceCapazityinGB(cachedDiskUsage.free)}}GB</b-progress-bar>
                                         <b-progress-bar :key="used" :value="computePartitionUsedPercentage(cachedDiskUsage.used, cachedDiskUsage.all)" variant="primary">Used {{parseDeviceCapazityinGB(cachedDiskUsage.used)}}GB</b-progress-bar>
                                     </b-progress>
@@ -191,6 +196,7 @@
       },
       data() {
           return {
+              expandedParts : false,
               snackbarInfoSmartMode: false,
               snackbarContent : "",
               noRemoteConnectionText : "No connection to the servers possible, please plug in and specify an output device or use the internal storage to continue the image process.",
@@ -240,6 +246,13 @@
           }
       },
       methods: {
+          toggleExpandedPartitions: function(){
+              if (this.expandedParts){
+                  this.expandedParts = false
+              }else{
+                  this.expandedParts = true
+              }
+          },
           setCompressed: function(value){
             this.cachedImageOptions.image_option.compressed = value
           },
