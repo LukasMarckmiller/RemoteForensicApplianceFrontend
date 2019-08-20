@@ -159,16 +159,24 @@
                             </v-layout>
                             </v-expansion-panel-content>
                         </v-expansion-panel>
-                        <v-layout class="mt-3" align-center justify-space-around row>
-                            {{hashes.md_5_input}} <v-icon color="green" v-if="finisedJob && hashResult.md_5_valid">check_circle_outline</v-icon> <v-icon color="red" v-if="finisedJob && !hashResult.md_5_valid">highlight_off</v-icon> {{hashes.md_5_output}}
+                        <v-subheader v-if="finisedJob">MD5 Validation</v-subheader>
+                        <v-layout v-if="finisedJob" class="mt-3" align-center justify-space-around column>
+                            <v-chip outline color="deep-orange lighten-2">In: {{hashes.md_5_input}}</v-chip>
+                            <v-icon color="green" v-if="hashResult.md_5_valid">check_circle_outline</v-icon>
+                            <v-icon color="red" v-if="!hashResult.md_5_valid">highlight_off</v-icon>
+                            <v-chip outline color="deep-orange lighten-2">Out: {{hashes.md_5_output}}</v-chip>
                         </v-layout>
-                        <v-layout class="mb-3" align-center justify-space-around row>
-                            {{hashes.sha_256_input}} <v-icon color="green" v-if="finisedJob && hashResult.sha_256_valid">check_circle_outline</v-icon> <v-icon color="red" v-if="finisedJob && !hashResult.sha_256_valid">highlight_off</v-icon> {{hashes.sha_256_output}}
+                        <v-divider></v-divider>
+                        <v-subheader v-if="finisedJob">SHA256 Validation</v-subheader>
+                        <v-layout v-if="finisedJob" class="mb-3" align-center justify-space-around column>
+                           <v-chip outline color="grey darken-2">In: {{hashes.sha_256_input}}</v-chip>
+                            <v-icon color="green" v-if="hashResult.sha_256_valid">check_circle_outline</v-icon>
+                            <v-icon color="red" v-if="!hashResult.sha_256_valid">highlight_off</v-icon>
+                            <v-chip outline color="deep-orange lighten-2">Out: {{hashes.sha_256_output}}</v-chip>
                         </v-layout>
                         <v-btn v-if="!running" color="deep-orange lighten-2" @click="postImageJobAndRun(selectedInputDevice.name)">Start</v-btn>
                         <v-btn v-if="running" color="deep-orange lighten-2" @click="cancelImageJob">Cancel</v-btn>
                         <v-btn flat @click="e1 = 2">Back</v-btn>
-
                     </v-stepper-content>
                 </v-stepper-items>
             </v-stepper>
@@ -318,8 +326,9 @@
 
               HTTP.get('image/' + this.currentJobId).then(response => {
                   this.pollingResult = response.data;
-                  this.consoleOutputDeviceOutput += this.pollingResult.commandOfOutput;
-                  this.consoleInputDeviceOutput += this.pollingResult.commandIfOutput;
+                  this.consoleOutputDeviceOutput = this.pollingResult.commandOfOutput;
+                  this.consoleInputDeviceOutput = this.pollingResult.commandIfOutput;
+
                   this.running = this.pollingResult.running;
 
                   //Transmission job finished or crashed
