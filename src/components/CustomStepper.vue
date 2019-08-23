@@ -41,10 +41,10 @@
                                       return-object
                                       single-line label="Select">
                                 <template v-if="currentInputDevice !== ''" slot="selection" slot-scope="data">
-                                    <v-chip>{{ data.item.name}} (Vendor: {{ data.item.vendor}}, Model: {{data.item.model}}, Size: {{parseDeviceCapazityinGB(data.item.size_bytes)}} GB)</v-chip>
+                                    <v-chip>{{ data.item.name}} (Vendor: {{ data.item.vendor}}, Model: {{data.item.model}}, Size: {{parseDeviceCapacityHumandRead(data.item.size_bytes)}})</v-chip>
                                 </template>
                                 <template v-if="devices !== null" slot="item" slot-scope="data">
-                                    {{ data.item.name }} (Vendor: {{ data.item.vendor}}, Model: {{data.item.model}}, Size: {{parseDeviceCapazityinGB(data.item.size_bytes)}} GB)
+                                    {{ data.item.name }} (Vendor: {{ data.item.vendor}}, Model: {{data.item.model}}, Size: {{parseDeviceCapacityHumandRead(data.item.size_bytes)}})
                                 </template>
                             </v-select>
                             <v-card>
@@ -72,7 +72,7 @@
                                             <v-icon>mdi-chart-pie</v-icon>
                                         </v-list-item-icon>
                                         <v-list-item-content>
-                                            <v-list-item-title v-text="item.name + ' (' + parseDeviceCapazityinGB(item.size_bytes)+ 'GB)'"></v-list-item-title>
+                                            <v-list-item-title v-text="item.name + ' (' + parseDeviceCapacityHumandRead(item.size_bytes) + ')'"></v-list-item-title>
                                             <v-list-item-subtitle v-text="item.mount_point"></v-list-item-subtitle>
                                         </v-list-item-content>
                                     </v-list-item>
@@ -80,11 +80,11 @@
                                 </v-list>
                             <b-progress v-if="expandedParts" class="mt-2">
                                 <template v-for="(child, index) in currentInputDevice.partitions">
-                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-if="index <= 0" variant="primary">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
-                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-else-if="index === 1" variant="danger">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
-                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-else-if="index === 2" variant="warning">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
-                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-else-if="index === 3" variant="info">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
-                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-else-if="index >= 4" variant="success">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-if="index <= 0" variant="primary">{{child.name}} {{parseDeviceCapacityHumandRead(child.size_bytes)}}</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-else-if="index === 1" variant="danger">{{child.name}} {{parseDeviceCapacityHumandRead(child.size_bytes)}}</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-else-if="index === 2" variant="warning">{{child.name}} {{parseDeviceCapacityHumandRead(child.size_bytes)}}</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-else-if="index === 3" variant="info">{{child.name}} {{parseDeviceCapacityHumandRead(child.size_bytes)}}</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-else-if="index >= 4" variant="success">{{child.name}} {{parseDeviceCapacityHumandRead(child.size_bytes)}}</b-progress-bar>
                                 </template>
                             </b-progress>
                             </v-card>
@@ -96,9 +96,7 @@
                                 <v-card v-if="!this.remoteTransmission"
                                         color="grey lighten-4">
                                     <v-card-title><small>Choose a location to save the image to.</small></v-card-title>
-                                        <v-spacer></v-spacer>
-                                        <v-btn text icon color="deep-orange lighten-2" @click="reloadPage"><v-icon>cached</v-icon></v-btn>
-                                    <v-select v-if="mounts != null" chips prepend-icon="sd_storage" class="mr-3 ml-3" v-model="mount" v-on:change="diskUsage(mount.mount_point)" item-value="serial_number" v-bind:items="mounts" persistent-hint
+                                    <v-select v-if="mounts != null" chips prepend-icon="mdi-sd" class="mr-3 ml-3" v-model="mount" v-on:change="diskUsage(mount.mount_point)" item-value="serial_number" v-bind:items="mounts" persistent-hint
                                               return-object
                                               single-line>
                                         <template v-if="mount !== null" slot="selection" slot-scope="data">
@@ -106,12 +104,12 @@
                                         </template>
 
                                         <template v-if="mounts !== null" slot="item" slot-scope="data">
-                                            {{ data.item.mount_point}} (Size: {{parseDeviceCapazityinGB(data.item.size_bytes)}} GB, Type: {{ data.item.type}}, Read-Only: {{data.item.read_only}})
+                                            {{ data.item.mount_point}} (Size: {{parseDeviceCapacityHumandRead(data.item.size_bytes)}}, Type: {{ data.item.type}}, Read-Only: {{data.item.read_only}})
                                         </template>
                                     </v-select>
                                     <b-progress v-if="mount !== null" class="mt-2">
-                                        <b-progress-bar :key="free" :value="computePartitionUsedPercentage(cachedDiskUsage.free, cachedDiskUsage.all)" variant="success">Free {{parseDeviceCapazityinGB(cachedDiskUsage.free)}}GB</b-progress-bar>
-                                        <b-progress-bar :key="used" :value="computePartitionUsedPercentage(cachedDiskUsage.used, cachedDiskUsage.all)" variant="primary">Used {{parseDeviceCapazityinGB(cachedDiskUsage.used)}}GB</b-progress-bar>
+                                        <b-progress-bar :key="free" :value="computePartitionUsedPercentage(cachedDiskUsage.free, cachedDiskUsage.all)" variant="success">Free {{parseDeviceCapacityHumandRead(cachedDiskUsage.free)}}</b-progress-bar>
+                                        <b-progress-bar :key="used" :value="computePartitionUsedPercentage(cachedDiskUsage.used, cachedDiskUsage.all)" variant="primary">Used {{parseDeviceCapacityHumandRead(cachedDiskUsage.used)}}</b-progress-bar>
                                     </b-progress>
                                 </v-card>
                                     </v-col>
@@ -143,7 +141,7 @@
                         <v-expansion-panels
                                 multiple
                         >
-                        <v-expansion-panel>
+                        <v-expansion-panel >
                             <v-expansion-panel-header>Summary</v-expansion-panel-header>
                             <v-expansion-panel-content>
                                 <v-card outlined>
@@ -152,8 +150,8 @@
                                         <p>Transfer Option : <i>{{cachedImageOptions.image_option.type === imageTypeFull ? "Full image" : "Certain Artifacts"}}</i></p>
                                         <p>Selected Input Device : <i>{{ getCurrentInputDevice().name}} (Vendor: {{
                                             currentInputDevice.vendor}}, Model: {{currentInputDevice.model}}, Size:
-                                            {{parseDeviceCapazityinGB(getCurrentInputDevice().size_bytes)}} GB)</i></p>
-                                        <p>Selecte Output: <i>{{cachedImageOptions.image_option.target === imageTargetLocal ?  mount.mount_point + " (Size " + parseDeviceCapazityinGB(mount.size_bytes) + "GB)" : "Remote transmission" }}</i></p>
+                                            {{parseDeviceCapacityHumandRead(getCurrentInputDevice().size_bytes)}})</i></p>
+                                        <p>Selecte Output: <i>{{cachedImageOptions.image_option.target === imageTargetLocal ?  mount.mount_point + " (Size " + parseDeviceCapacityHumandRead(mount.size_bytes) + ")" : "Remote transmission" }}</i></p>
                                         <p>Job ID: <i>{{currentJobId}}</i></p>
                                     </v-card-text>
                                 </v-card>
@@ -320,8 +318,17 @@
                   this.triggerSmartMode()
               }
           },
-          parseDeviceCapazityinGB: function (bytesAsString) {
-              return Math.round(parseInt(bytesAsString) / 1073741824).toString();
+
+          parseDeviceCapacityHumandRead: function (bytesAsString) {
+              let i = -1;
+              const byteUnits = [' kB', ' MB', ' GB', ' TB', 'PB', 'EB', 'ZB', 'YB'];
+              let fileSizeInBytes = parseInt(bytesAsString)
+              do {
+                  fileSizeInBytes = fileSizeInBytes / 1024;
+                  i++;
+              } while (fileSizeInBytes > 1024);
+
+              return Math.max(fileSizeInBytes, 0.1).toFixed(1) + byteUnits[i];
           },
 
           computePartitionUsedPercentage: function (bytesAsStringPart, bytesAsStringDevice) {

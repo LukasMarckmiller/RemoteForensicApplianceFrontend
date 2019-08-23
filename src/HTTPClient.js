@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const HTTP = axios.create({
-    baseURL: "http://192.168.0.12:" + getPort(),
+    baseURL: "http://localhost:" + getPort(),
 });
 
 function getPort() {
