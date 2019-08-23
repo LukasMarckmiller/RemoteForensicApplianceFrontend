@@ -173,20 +173,32 @@
                         </v-expansion-panel>
                         </v-expansion-panels>
                         <v-subheader v-if="finisedJob"> MD5 Validation</v-subheader>
-                        <v-layout v-if="finisedJob" class="mt-3" align-center justify-space-around column>
+                        <v-container v-if="finisedJob" >
+                            <v-row justify="center">
                             <v-chip outline color="deep-orange lighten-2">In: {{hashes.md_5_input}}</v-chip>
-                            <v-icon color="green" v-if="hashResult.md_5_valid">check_circle_outline</v-icon>
-                            <v-icon color="red" v-if="!hashResult.md_5_valid">highlight_off</v-icon>
+                            </v-row>
+                            <v-row justify="center">
+                            <v-icon color="green" v-if="hashResult.md_5_valid">mdi-checkbox-marked-circle</v-icon>
+                            <v-icon color="red" v-if="!hashResult.md_5_valid">mdi-close-circle</v-icon>
+                            </v-row>
+                            <v-row justify="center">
                             <v-chip outline color="deep-orange lighten-2">Out: {{hashes.md_5_output}}</v-chip>
-                        </v-layout>
+                            </v-row>
+                        </v-container>
                         <v-divider></v-divider>
                         <v-subheader v-if="finisedJob">SHA256 Validation</v-subheader>
-                        <v-layout v-if="finisedJob" class="mb-3" align-center justify-space-around column>
-                           <v-chip outline color="grey darken-2">In: {{hashes.sha_256_input}}</v-chip>
-                            <v-icon color="green" v-if="hashResult.sha_256_valid">check_circle_outline</v-icon>
-                            <v-icon color="red" v-if="!hashResult.sha_256_valid">highlight_off</v-icon>
+                        <v-container v-if="finisedJob">
+                            <v-row justify="center">
+                           <v-chip outline color="deep-orange lighten-2">In: {{hashes.sha_256_input}}</v-chip>
+                            </v-row>
+                            <v-row justify="center">
+                            <v-icon color="green" v-if="hashResult.sha_256_valid">mdi-checkbox-marked-circle</v-icon>
+                            <v-icon color="red" v-if="!hashResult.sha_256_valid">mdi-close-circle</v-icon>
+                            </v-row>
+                            <v-row justify="center">
                             <v-chip outline color="deep-orange lighten-2">Out: {{hashes.sha_256_output}}</v-chip>
-                        </v-layout>
+                            </v-row>
+                        </v-container>
                         <v-container>
                         <v-row justify="space-between" >
                             <v-btn text @click="e1 = 2">Back</v-btn>

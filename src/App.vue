@@ -18,11 +18,11 @@
         </template>
         <v-card>
           <v-toolbar @click="dialog=false" color="deep-orange lighten-2">
-            <v-btn icon dark @click="dialog = false">
-              <v-icon color="black">close</v-icon>
-            </v-btn>
             <v-toolbar-title class="headline">Settings</v-toolbar-title>
             <v-spacer></v-spacer>
+            <v-btn icon dark @click="dialog = false">
+            <v-icon color="black">mdi-close</v-icon>
+          </v-btn>
           </v-toolbar>
           <v-list subheader three-line>
             <v-subheader>Image Process</v-subheader>
@@ -62,7 +62,7 @@
 
             <v-list-item avatar>
               <v-list-item-action>
-                <v-switch v-model="sendAnalytics" @change="sendAnalytics" color="deep-orange lighten-1"></v-switch>
+                <v-switch v-model="sendAnalytics" @change="sendAnalytics" color="deep-orange lighten-2"></v-switch>
               </v-list-item-action>
 
               <v-list-item-content>
