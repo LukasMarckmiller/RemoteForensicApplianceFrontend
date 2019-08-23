@@ -9,16 +9,16 @@
              top>
              {{snackbarContent}}
          <v-btn  color="deep-orange lighten-2"
-                 flat
+                 text
                  @click="snackbarInfoSmartMode = false">
              Close
          </v-btn></v-snackbar>
-     <v-layout>
-    <v-container fluid>
-        <v-flex xs12 md12 >
-            <v-stepper light v-model="e1">
+     <v-container fluid>
+         <v-row>
+             <v-col>
+            <v-stepper v-model="e1">
                 <v-stepper-header>
-                    <v-stepper-step color="deep-orange lighten-2" :complete="e1 > 1" step="1">Choose Input Device</v-stepper-step>
+                    <v-stepper-step :complete="e1 > 1" color="deep-orange lighten-2" step="1">Choose Input Device</v-stepper-step>
                     <v-divider></v-divider>
                     <v-stepper-step color="deep-orange lighten-2" :complete="e1 > 2" step="2">Processing Settings
                     <small>Optional</small>
@@ -28,19 +28,19 @@
                 </v-stepper-header>
                 <v-stepper-items>
                     <v-stepper-content step="1">
-                        <v-layout>
-                            <v-flex xs12 sm12>
+                        <v-container fluid>
+                            <v-row no-gutters>
+                                <v-col>
                         <v-card class="mb-3"
                                 color="grey lighten-4">
-                                <v-layout >
-                                <v-card-title>Choose a device to read data and create an image from.</v-card-title>
+                                <v-card-title><small>Choose a device to read data and create an image from.</small>
                                     <v-spacer></v-spacer>
-                                    <v-btn flat icon color="deep-orange lighten-2" @click="reloadPage"><v-icon>cached</v-icon></v-btn>
-                                </v-layout>
-                            <v-select chips prepend-icon="sd_storage" class="mr-3 ml-3 red--text" v-model="selectedInputDevice" item-value="serial_number" v-bind:items="devices" persistent-hint
+                                    <v-btn text icon color="deep-orange lighten-2" @click="reloadPage"><v-icon>mdi-reload</v-icon></v-btn>
+                                </v-card-title>
+                            <v-select chips prepend-icon="mdi-sd" class="mr-3 ml-3 red--text" v-model="currentInputDevice" item-value="serial_number" v-bind:items="devices" persistent-hint
                                       return-object
                                       single-line label="Select">
-                                <template v-if="selectedInputDevice !== ''" slot="selection" slot-scope="data">
+                                <template v-if="currentInputDevice !== ''" slot="selection" slot-scope="data">
                                     <v-chip>{{ data.item.name}} (Vendor: {{ data.item.vendor}}, Model: {{data.item.model}}, Size: {{parseDeviceCapazityinGB(data.item.size_bytes)}} GB)</v-chip>
                                 </template>
                                 <template v-if="devices !== null" slot="item" slot-scope="data">
@@ -50,43 +50,54 @@
                             <v-card>
                                 <v-toolbar color="deep-orange lighten-2" dense>
                                     <v-btn icon @click="toggleExpandedPartitions()">
-                                        <v-icon>{{expandedParts ? 'expand_less' : 'expand_more'}}</v-icon>
+                                        <v-icon>{{expandedParts ? 'mdi-chevron-up' : 'mdi-chevron-down'}}</v-icon>
                                     </v-btn>
                                     <v-toolbar-title class="ml-1" style="font-size:medium">Partitions</v-toolbar-title>
                                     <v-spacer></v-spacer>
                                 </v-toolbar>
                                 <v-list v-if="expandedParts" class="grey lighten-4">
-                                    <v-list-tile
-                                        v-for="item in selectedInputDevice.partitions"
+                                    <v-list-item-group v-model="currentInput">
+                                        <v-list-item>
+                                            <v-list-item-icon>
+                                                <v-icon>mdi-sd</v-icon>
+                                            </v-list-item-icon>
+                                            <v-list-item-content>
+                                                <v-list-item-title>All</v-list-item-title>
+                                            </v-list-item-content>
+                                        </v-list-item>
+                                    <v-list-item
+                                        v-for="item in currentInputDevice.partitions"
                                         :key="item.name">
-
-                                        <v-icon class="mr-3">storage</v-icon>
-                                        <v-list-tile-content>
-                                            <v-list-tile-title v-text="item.name + ' (' + parseDeviceCapazityinGB(item.size_bytes)+ 'GB)'"></v-list-tile-title>
-                                            <v-list-tile-sub-title v-text="item.mount_point"></v-list-tile-sub-title>
-                                        </v-list-tile-content>
-                                    </v-list-tile>
+                                        <v-list-item-icon>
+                                            <v-icon>mdi-chart-pie</v-icon>
+                                        </v-list-item-icon>
+                                        <v-list-item-content>
+                                            <v-list-item-title v-text="item.name + ' (' + parseDeviceCapazityinGB(item.size_bytes)+ 'GB)'"></v-list-item-title>
+                                            <v-list-item-subtitle v-text="item.mount_point"></v-list-item-subtitle>
+                                        </v-list-item-content>
+                                    </v-list-item>
+                                        </v-list-item-group>
                                 </v-list>
                             <b-progress v-if="expandedParts" class="mt-2">
-                                <template v-for="(child, index) in selectedInputDevice.partitions">
-                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-if="index <= 0" variant="primary">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
-                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-else-if="index === 1" variant="danger">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
-                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-else-if="index === 2" variant="warning">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
-                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-else-if="index === 3" variant="info">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
-                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,selectedInputDevice.size_bytes)" v-else-if="index >= 4" variant="success">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
+                                <template v-for="(child, index) in currentInputDevice.partitions">
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-if="index <= 0" variant="primary">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-else-if="index === 1" variant="danger">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-else-if="index === 2" variant="warning">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-else-if="index === 3" variant="info">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
+                                    <b-progress-bar :key="child.name" :value="computePartitionUsedPercentage(child.size_bytes,currentInputDevice.size_bytes)" v-else-if="index >= 4" variant="success">{{child.name}} {{parseDeviceCapazityinGB(child.size_bytes)}}GB</b-progress-bar>
                                 </template>
                             </b-progress>
                             </v-card>
                         </v-card>
-                            </v-flex>
-                            <v-flex>
-                                <v-card v-if="!this.remoteTransmission" class="ml-3"
+                                </v-col>
+                            </v-row>
+                                <v-row>
+                                    <v-col>
+                                <v-card v-if="!this.remoteTransmission"
                                         color="grey lighten-4">
-                                    <v-layout >
-                                        <v-card-title>Choose a location to save the image to.</v-card-title>
+                                    <v-card-title><small>Choose a location to save the image to.</small></v-card-title>
                                         <v-spacer></v-spacer>
-                                        <v-btn flat icon color="deep-orange lighten-2" @click="reloadPage"><v-icon>cached</v-icon></v-btn>
-                                    </v-layout>
+                                        <v-btn text icon color="deep-orange lighten-2" @click="reloadPage"><v-icon>cached</v-icon></v-btn>
                                     <v-select v-if="mounts != null" chips prepend-icon="sd_storage" class="mr-3 ml-3" v-model="mount" v-on:change="diskUsage(mount.mount_point)" item-value="serial_number" v-bind:items="mounts" persistent-hint
                                               return-object
                                               single-line>
@@ -103,63 +114,65 @@
                                         <b-progress-bar :key="used" :value="computePartitionUsedPercentage(cachedDiskUsage.used, cachedDiskUsage.all)" variant="primary">Used {{parseDeviceCapazityinGB(cachedDiskUsage.used)}}GB</b-progress-bar>
                                     </b-progress>
                                 </v-card>
-                            </v-flex>
-                        </v-layout>
-                        <v-btn color="deep-orange lighten-2"  v-bind:disabled="selectedInputDevice === '' || (smartMode === true && transferModeComputed === false || smartMode === false && mount === null)" @click="e1 = 3">
+                                    </v-col>
+                                </v-row>
+                            <v-row>
+                                <v-col>
+                              <v-row justify="end">
+
+                        <v-btn color="deep-orange lighten-2" v-bind:disabled="currentInputDevice === '' || (smartMode === true && transferModeComputed === false || smartMode === false && mount === null)" @click="e1 = 3">
                             Next
                         </v-btn>
+                              </v-row>
+                                </v-col>
+                            </v-row>
+                        </v-container>
                     </v-stepper-content>
                     <v-stepper-content step="2">
-                        <v-card class="mb-5"
+                        <v-card
                                 color="grey lighten-4">
                         </v-card>
-                        <v-btn color="deep-orange lighten-2"  @click="e1 = 3">
-                            Next
-                        </v-btn>
-                        <v-btn flat @click="e1 = 1">Back</v-btn>
+                        <v-row class="m-1" justify="space-between" >
+                        <v-btn text @click="e1 = 1">Back</v-btn>
+                            <v-btn color="deep-orange lighten-2"  @click="e1 = 3">
+                                Next
+                            </v-btn>
+                        </v-row>
                     </v-stepper-content>
                     <v-stepper-content step="3">
-                        <v-expansion-panel :value="1" popout >
+                        <v-expansion-panels
+                                multiple
+                        >
+                        <v-expansion-panel>
+                            <v-expansion-panel-header>Summary</v-expansion-panel-header>
                             <v-expansion-panel-content>
-                                <template v-slot:actions>
-                                    <v-icon color="deep-orange lighten-2">expand_more</v-icon>
-                                </template>
-                                <template v-slot:header>
-                                    <div><b>Summary</b></div>
-                                </template>
-                                <v-card class="ml-2">
-                                    <v-card-text v-if="cachedImageOptions !== null && mount !== null">
+                                <v-card outlined>
+                                    <v-card-text class="black--text" v-if="cachedImageOptions !== null && mount !== null">
                                         <p>Estimated Transmission Time : <i>{{getTimeStringFromSeconds(this.cachedImageOptions.estimated_secs)}}</i> </p>
                                         <p>Transfer Option : <i>{{cachedImageOptions.image_option.type === imageTypeFull ? "Full image" : "Certain Artifacts"}}</i></p>
-                                        <p>Selected Input Device : <i>{{ selectedInputDevice.name}} (Vendor: {{ selectedInputDevice.vendor}}, Model: {{selectedInputDevice.model}}, Size: {{parseDeviceCapazityinGB(selectedInputDevice.size_bytes)}} GB)</i></p>
+                                        <p>Selected Input Device : <i>{{ getCurrentInputDevice().name}} (Vendor: {{
+                                            currentInputDevice.vendor}}, Model: {{currentInputDevice.model}}, Size:
+                                            {{parseDeviceCapazityinGB(getCurrentInputDevice().size_bytes)}} GB)</i></p>
                                         <p>Selecte Output: <i>{{cachedImageOptions.image_option.target === imageTargetLocal ?  mount.mount_point + " (Size " + parseDeviceCapazityinGB(mount.size_bytes) + "GB)" : "Remote transmission" }}</i></p>
                                         <p>Job ID: <i>{{currentJobId}}</i></p>
                                     </v-card-text>
                                 </v-card>
                             </v-expansion-panel-content>
                         </v-expansion-panel>
-                        <v-expansion-panel popout>
+                        <v-expansion-panel>
+                            <v-expansion-panel-header>Image Job Console Log</v-expansion-panel-header>
                             <v-expansion-panel-content class="grey lighten-4">
-                                <template v-slot:actions>
-                                    <v-icon color="deep-orange lighten-2">expand_more</v-icon>
-                                </template>
-                                <template v-slot:header>
-                                    <div>Image Job Console Log</div>
-                                </template>
-                            <v-layout >
-                                <v-flex xs12 sm6>
-                                    <v-textarea id="idl" ref="idl" class="ml-3" height="400" box label="Input Device Log" readonly loading="false" v-model="consoleInputDeviceOutput" no-resize>
+                                <v-row align="start">
+                                    <v-textarea id="idl" ref="idl" class="ml-3" height="auto" box label="Input Device Log" readonly auto-grow loading="false" v-model="consoleInputDeviceOutput" no-resize>
                                     </v-textarea>
-                                </v-flex>
 
-                                <v-flex xs12 sm6>
-                                    <v-textarea id="odl" ref="odl" class="ml-3" height="400" box label="Output Device Log" readonly loading="false" v-model="consoleOutputDeviceOutput" no-resize>
+                                    <v-textarea id="odl" ref="odl" class="ml-3" height="auto" box label="Output Device Log" readonly auto-grow loading="false" v-model="consoleOutputDeviceOutput" no-resize>
                                     </v-textarea>
-                                </v-flex>
-                            </v-layout>
+                                </v-row>
                             </v-expansion-panel-content>
                         </v-expansion-panel>
-                        <v-subheader v-if="finisedJob">MD5 Validation</v-subheader>
+                        </v-expansion-panels>
+                        <v-subheader v-if="finisedJob"> MD5 Validation</v-subheader>
                         <v-layout v-if="finisedJob" class="mt-3" align-center justify-space-around column>
                             <v-chip outline color="deep-orange lighten-2">In: {{hashes.md_5_input}}</v-chip>
                             <v-icon color="green" v-if="hashResult.md_5_valid">check_circle_outline</v-icon>
@@ -174,24 +187,26 @@
                             <v-icon color="red" v-if="!hashResult.sha_256_valid">highlight_off</v-icon>
                             <v-chip outline color="deep-orange lighten-2">Out: {{hashes.sha_256_output}}</v-chip>
                         </v-layout>
-                        <v-btn v-if="!running" color="deep-orange lighten-2" @click="postImageJobAndRun(selectedInputDevice.name)">Start</v-btn>
-                        <v-btn v-if="running" color="deep-orange lighten-2" @click="cancelImageJob">Cancel</v-btn>
-                        <v-btn flat @click="e1 = 2">Back</v-btn>
+                        <v-container>
+                        <v-row justify="space-between" >
+                            <v-btn text @click="e1 = 2">Back</v-btn>
+                            <v-btn v-if="!running" color="deep-orange lighten-2" @click="postImageJobAndRun()">Start</v-btn>
+                            <v-btn v-if="running" color="deep-orange lighten-2" @click="cancelImageJob">Cancel</v-btn>
+                        </v-row>
+                        </v-container>
                     </v-stepper-content>
                 </v-stepper-items>
             </v-stepper>
             <v-progress-linear v-if="e1 === 1" class="mt-0" :indeterminate="smartModeProgress" color="deep-orange lighten-2"></v-progress-linear>
-            <v-flex
+            <v-row justify="center"
                     v-if="e1 === 1 && smartModeProgress"
-                    xs12
-                    subtitle-1
-                    text-xs-center>
-                <span class="font-weight-medium"> Calculating best transfer options</span>
-            </v-flex>
+                    >
+                 Calculating best transfer options
+            </v-row>
             <v-progress-linear v-if="e1 === 3" class="mt-0" :indeterminate="running" :color="finisedJob ? transmissionError === '' ? 'green' : 'red' : 'deep-orange lighten-2'" :value="finisedJob ? 100 : 0"></v-progress-linear>
-        </v-flex>
-    </v-container>
-     </v-layout>
+             </v-col>
+         </v-row>
+     </v-container>
  </div>
 </template>
 
@@ -220,7 +235,8 @@
               mounts: null,
               mount: null,
               e1: 1,
-              selectedInputDevice: "",
+              currentInputDevice: "",
+              currentInput: 0,
               pollinHandler : null,
               cachedDiskUsage : {
                   "all": 0,
@@ -245,15 +261,31 @@
               hashResult:{
                   md_5_valid: false,
                   sha_256_valid: false,
-              }
+              },
           }
       },
       watch: {
-          selectedInputDevice(){
+          currentInputDevice(){
+              this.triggerSmartMode();
+          },
+
+          currentInput(){
               this.triggerSmartMode();
           }
       },
       methods: {
+          getCurrentInputDevice: function(){
+              let path = "";
+
+              if(this.currentInput === 0){
+                  path = this.currentInputDevice
+              }else{
+                  path = this.currentInputDevice.partitions[this.currentInput - 1]
+              }
+
+              return path
+          },
+
           toggleExpandedPartitions: function(){
               if (this.expandedParts){
                   this.expandedParts = false
@@ -298,11 +330,13 @@
               return date.toISOString().substr(11, 8)
           },
 
-          postImageJobAndRun: function (path) {
+          postImageJobAndRun: function() {
               this.currentJobId = "";
               this.consoleInputDeviceOutput = "";
               this.consoleOutputDeviceOutput = "";
               this.finisedJob = false;
+              let path
+              path = this.getCurrentInputDevice().name
 
                HTTP.post('image', {path: path, image_option: this.cachedImageOptions.image_option, mount:this.mount}).then(response => {this.currentJobId = response.data;
                   this.running = true;
@@ -373,10 +407,10 @@
                   return
               }
 
-              if (this.selectedInputDevice !== ""){
+              if (this.currentInputDevice !== ""){
                   this.smartModeProgress = true;
 
-                  HTTP.post('media/transfer',{name:this.selectedInputDevice.name, size:this.selectedInputDevice.size_bytes}).then(response => {
+                  HTTP.post('media/transfer',{name:this.getCurrentInputDevice().name, size:this.getCurrentInputDevice().size_bytes}).then(response => {
                         this.cachedImageOptions = response.data;
                       if (this.cachedImageOptions.image_option.target === this.imageTargetLocal)
                       {
@@ -397,7 +431,7 @@
           HTTP.get('media').then(response => {
              this.devices = response.data
              if (this.devices !== null)
-                 this.selectedInputDevice = this.devices[0]
+                 this.currentInputDevice = this.devices[0]
          })
 
           HTTP.get('mounted').then(response => {
@@ -409,7 +443,3 @@
       },
   }
 </script>
-
-<style>
-
-</style>

@@ -1,8 +1,8 @@
 <template>
-  <v-app style="background-color: #FAFAFA">
-    <v-toolbar app color="deep-orange lighten-2">
+  <v-app>
+    <v-app-bar app color="deep-orange lighten-2">
       <v-toolbar-title class="headline">
-        <v-icon class="mr-2">developer_board</v-icon>
+        <v-icon class="mr-2">mdi-developer-board</v-icon>
         <span>Remote</span>
         <span class="font-weight-light">Forensic</span>
         <span class="font-weight-thin">Appliance</span>
@@ -10,8 +10,8 @@
       <v-spacer></v-spacer>
       <v-dialog v-model="dialog" fullscreen hide-overlay transition="dialog-bottom-transition">
         <template v-slot:activator="{ on }">
-          <v-btn flat v-on="on">
-            <v-icon>settings</v-icon>
+          <v-btn text v-on="on">
+            <v-icon>mdi-cogs</v-icon>
             <span class="mr-1"></span>
             <span class="mr-2">Settings</span>
           </v-btn>
@@ -24,10 +24,10 @@
             <v-toolbar-title class="headline">Settings</v-toolbar-title>
             <v-spacer></v-spacer>
           </v-toolbar>
-          <v-list three-line subheader>
+          <v-list subheader three-line>
             <v-subheader>Image Process</v-subheader>
-            <v-list-tile avatar>
-              <v-list-tile-action tile>
+            <v-list-item avatar>
+              <v-list-item-action>
                 <v-tabs
                         fixed-tabs
                         color="deep-orange lighten-2"
@@ -42,54 +42,65 @@
                     DD
                   </v-tab>
                 </v-tabs>
-              </v-list-tile-action>
-              <v-list-tile-content class="ml-2">
-                <v-list-tile-title>Aqcuisition Tool</v-list-tile-title>
-                <v-list-tile-sub-title>Set tool which should be used to create the image</v-list-tile-sub-title>
-              </v-list-tile-content>
-            </v-list-tile>
-              <v-list-tile avatar>
-                <v-list-tile-action>
-                  <v-checkbox v-model="compression" @change="onCompressionChange" color="deep-orange lighten-2"></v-checkbox>
-                </v-list-tile-action>
-                <v-list-tile-content>
-                  <v-list-tile-title>Compression</v-list-tile-title>
-                  <v-list-tile-sub-title>Compress the image with gzip in order to reduce its size. (Warning: Hashsum verification must be done manually)</v-list-tile-sub-title>
-                </v-list-tile-content>
-              </v-list-tile>
-            <v-list-tile avatar>
-              <v-list-tile-action>
-                <v-checkbox v-model="sendAnalytics" @change="sendAnalytics" color="deep-orange lighten-1"></v-checkbox>
-              </v-list-tile-action>
-              <v-list-tile-content>
-                <v-list-tile-title>Automatically send output and diagnostic.</v-list-tile-title>
-                <v-list-tile-sub-title>Send imaging process history and stats if connection to the servers is possible.</v-list-tile-sub-title>
-              </v-list-tile-content>
-            </v-list-tile>
+              </v-list-item-action>
+              <v-list-item-content class="ml-2">
+                <v-list-item-title>Aqcuisition Tool</v-list-item-title>
+                <v-list-item-subtitle>Set tool which should be used to create the image</v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+
+              <v-list-item>
+                <v-list-item-action>
+                  <v-switch v-model="compression" @change="onCompressionChange" color="deep-orange lighten-2"></v-switch>
+                </v-list-item-action>
+
+                <v-list-item-content>
+                  <v-list-item-title>Compression</v-list-item-title>
+                  <v-list-item-subtitle>Compress the image with gzip in order to reduce its size. (Warning: Hashsum verification must be done manually)</v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+
+            <v-list-item avatar>
+              <v-list-item-action>
+                <v-switch v-model="sendAnalytics" @change="sendAnalytics" color="deep-orange lighten-1"></v-switch>
+              </v-list-item-action>
+
+              <v-list-item-content>
+                <v-list-item-title>Automatically send output and diagnostic.</v-list-item-title>
+                <v-list-item-subtitle>Send imaging process history and stats if connection to the servers is possible.</v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+
           </v-list>
           <v-divider></v-divider>
           <v-list three-line subheader>
             <v-subheader>General</v-subheader>
-            <v-list-tile avatar>
-              <v-list-tile-action>
-                <v-switch class="ml-3" color="orange darken-3" @change="showSnackParInfo"
+
+            <v-list-item avatar>
+              <v-list-item-action>
+                <v-switch color="deep-orange lighten-2" @change="showSnackParInfo"
                           hide-details
                           v-model="smartMode" >
                 </v-switch>
-              </v-list-tile-action>
-              <v-list-tile-content>
-                <v-list-tile-title>Smart Mode</v-list-tile-title>
-                <v-list-tile-sub-title>Auto compute best transfer options.</v-list-tile-sub-title>
-              </v-list-tile-content>
-            </v-list-tile>
+              </v-list-item-action>
+
+              <v-list-item-content>
+                <v-list-item-title>Smart Mode</v-list-item-title>
+                <v-list-item-subtitle>Auto compute best transfer options.</v-list-item-subtitle>
+              </v-list-item-content>
+
+            </v-list-item>
           </v-list>
         </v-card>
       </v-dialog>
-    </v-toolbar>
+    </v-app-bar>
     <v-content>
-      <myCustomStepper ref="customStepper" msg="Users"/>
+      <v-container fluid>
+        <myCustomStepper ref="customStepper" msg="Users"/>
+      </v-container>
     </v-content>
   </v-app>
+
 </template>
 <!--Insert footer-->
 
@@ -108,7 +119,7 @@ export default {
       compression: false,
       smartMode: true,
       sendAnalytics : true,
-      selectedTab : 0
+      selectedTab : 0,
     }
   },
 
