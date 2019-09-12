@@ -20,11 +20,11 @@
                 <v-stepper-header>
                     <v-stepper-step :complete="e1 > 1" color="deep-orange lighten-2" step="1">Choose Input Device</v-stepper-step>
                     <v-divider></v-divider>
-                    <v-stepper-step color="deep-orange lighten-2" :complete="e1 > 2" step="2">Processing Settings
+                    <v-stepper-step v-if="false" color="deep-orange lighten-2" :complete="e1 > 2" step="2">Processing Settings
                     <small>Optional</small>
                     </v-stepper-step>
                     <v-divider></v-divider>
-                    <v-stepper-step color="deep-orange lighten-2" step="3">Finish</v-stepper-step>
+                    <v-stepper-step color="deep-orange lighten-2" step="3">Processing</v-stepper-step>
                 </v-stepper-header>
                 <v-stepper-items>
                     <v-stepper-content step="1">
@@ -47,32 +47,32 @@
                                     {{ data.item.name }} (Vendor: {{ data.item.vendor}}, Model: {{data.item.model}}, Size: {{parseDeviceCapacityHumandRead(data.item.size_bytes)}})
                                 </template>
                             </v-select>
-                            <v-card>
-                                <v-toolbar color="deep-orange lighten-2" dense>
-                                    <v-btn icon @click="toggleExpandedPartitions()">
-                                        <v-icon>{{expandedParts ? 'mdi-chevron-up' : 'mdi-chevron-down'}}</v-icon>
-                                    </v-btn>
-                                    <v-toolbar-title class="ml-1" style="font-size:medium">Partitions</v-toolbar-title>
-                                    <v-spacer></v-spacer>
+                            <v-card v-if="currentInputDevice.partitions.length !== 0">
+                                <v-toolbar @click="toggleExpandedPartitions()" color="deep-orange lighten-2" dense>
+                                    <v-icon class="mr-3">{{expandedParts ? 'mdi-chevron-up' : 'mdi-chevron-down'}}</v-icon>
+                                    <v-toolbar-title class="ml-1" style="font-size:medium">Partitions </v-toolbar-title>
+                                    <v-toolbar-items>
+                                        <span class="mt-3 ml-1"> {{currentInput!== 0 ? '(' + getCurrentInputDevice().name + ' ' +  parseDeviceCapacityHumandRead(getCurrentInputDevice().size_bytes) + ')': ''}}</span>
+                                    </v-toolbar-items>
                                 </v-toolbar>
                                 <v-list v-if="expandedParts" class="grey lighten-4">
                                     <v-list-item-group v-model="currentInput">
-                                        <v-list-item>
-                                            <v-list-item-icon>
-                                                <v-icon>mdi-sd</v-icon>
-                                            </v-list-item-icon>
+                                        <v-list-item @click="toggleExpandedPartitions">
+                                            <v-list-item-action>
+                                                <v-icon >mdi-sd</v-icon>
+                                            </v-list-item-action>
                                             <v-list-item-content>
                                                 <v-list-item-title>All</v-list-item-title>
                                             </v-list-item-content>
                                         </v-list-item>
-                                    <v-list-item
+                                    <v-list-item @click="toggleExpandedPartitions"
                                         v-for="item in currentInputDevice.partitions"
                                         :key="item.name">
-                                        <v-list-item-icon>
+                                        <v-list-item-action>
                                             <v-icon>mdi-chart-pie</v-icon>
-                                        </v-list-item-icon>
+                                        </v-list-item-action>
                                         <v-list-item-content>
-                                            <v-list-item-title v-text="item.name + ' (' + parseDeviceCapacityHumandRead(item.size_bytes) + ')'"></v-list-item-title>
+                                            <v-list-item-title v-text="item.name + ' (' + parseDeviceCapacityHumandRead(item.size_bytes) + ')'"> </v-list-item-title>
                                             <v-list-item-subtitle v-text="item.mount_point"></v-list-item-subtitle>
                                         </v-list-item-content>
                                     </v-list-item>
@@ -138,10 +138,38 @@
                         </v-row>
                     </v-stepper-content>
                     <v-stepper-content step="3">
+                        <v-subheader v-if="finishedJob"> MD5 Validation</v-subheader>
+                        <v-container v-if="finishedJob" >
+                            <v-row justify="center">
+                                <v-chip outline color="deep-orange lighten-2">In: {{hashes.md_5_input}}</v-chip>
+                            </v-row>
+                            <v-row justify="center">
+                                <v-icon color="green" v-if="hashResult.md_5_valid">mdi-checkbox-marked-circle</v-icon>
+                                <v-icon color="red" v-if="!hashResult.md_5_valid">mdi-close-circle</v-icon>
+                            </v-row>
+                            <v-row justify="center">
+                                <v-chip outline color="deep-orange lighten-2">Out: {{hashes.md_5_output}}</v-chip>
+                            </v-row>
+                        </v-container>
+                        <v-divider></v-divider>
+                        <v-subheader v-if="finishedJob">SHA256 Validation</v-subheader>
+                        <v-container v-if="finishedJob">
+                            <v-row justify="center">
+                                <v-chip outline color="deep-orange lighten-2">In: {{hashes.sha_256_input}}</v-chip>
+                            </v-row>
+                            <v-row justify="center">
+                                <v-icon color="green" v-if="hashResult.sha_256_valid">mdi-checkbox-marked-circle</v-icon>
+                                <v-icon color="red" v-if="!hashResult.sha_256_valid">mdi-close-circle</v-icon>
+                            </v-row>
+                            <v-row justify="center">
+                                <v-chip outline color="deep-orange lighten-2">Out: {{hashes.sha_256_output}}</v-chip>
+                            </v-row>
+                        </v-container>
                         <v-expansion-panels
                                 multiple
+                                v-model="tab3panels"
                         >
-                        <v-expansion-panel >
+                        <v-expansion-panel>
                             <v-expansion-panel-header>Summary</v-expansion-panel-header>
                             <v-expansion-panel-content>
                                 <v-card outlined>
@@ -157,52 +185,26 @@
                                 </v-card>
                             </v-expansion-panel-content>
                         </v-expansion-panel>
-                        <v-expansion-panel>
+                        <v-expansion-panel v-if="finishedJob || running">
                             <v-expansion-panel-header>Image Job Console Log</v-expansion-panel-header>
-                            <v-expansion-panel-content class="grey lighten-4">
-                                <v-row align="start">
-                                    <v-textarea id="idl" ref="idl" class="ml-3" height="auto" box label="Input Device Log" readonly auto-grow loading="false" v-model="consoleInputDeviceOutput" no-resize>
+                            <v-expansion-panel-content>
+                                <v-row>
+                                    <v-textarea id="idl" ref="idl" label="Input Device Log" readonly no-resize rows="10" v-model="consoleInputDeviceOutput">
                                     </v-textarea>
 
-                                    <v-textarea id="odl" ref="odl" class="ml-3" height="auto" box label="Output Device Log" readonly auto-grow loading="false" v-model="consoleOutputDeviceOutput" no-resize>
+                                    <v-textarea id="odl" ref="odl" label="Output Device Log" readonly no-resize rows="10" v-model="consoleOutputDeviceOutput">
                                     </v-textarea>
                                 </v-row>
                             </v-expansion-panel-content>
                         </v-expansion-panel>
                         </v-expansion-panels>
-                        <v-subheader v-if="finisedJob"> MD5 Validation</v-subheader>
-                        <v-container v-if="finisedJob" >
-                            <v-row justify="center">
-                            <v-chip outline color="deep-orange lighten-2">In: {{hashes.md_5_input}}</v-chip>
-                            </v-row>
-                            <v-row justify="center">
-                            <v-icon color="green" v-if="hashResult.md_5_valid">mdi-checkbox-marked-circle</v-icon>
-                            <v-icon color="red" v-if="!hashResult.md_5_valid">mdi-close-circle</v-icon>
-                            </v-row>
-                            <v-row justify="center">
-                            <v-chip outline color="deep-orange lighten-2">Out: {{hashes.md_5_output}}</v-chip>
-                            </v-row>
-                        </v-container>
-                        <v-divider></v-divider>
-                        <v-subheader v-if="finisedJob">SHA256 Validation</v-subheader>
-                        <v-container v-if="finisedJob">
-                            <v-row justify="center">
-                           <v-chip outline color="deep-orange lighten-2">In: {{hashes.sha_256_input}}</v-chip>
-                            </v-row>
-                            <v-row justify="center">
-                            <v-icon color="green" v-if="hashResult.sha_256_valid">mdi-checkbox-marked-circle</v-icon>
-                            <v-icon color="red" v-if="!hashResult.sha_256_valid">mdi-close-circle</v-icon>
-                            </v-row>
-                            <v-row justify="center">
-                            <v-chip outline color="deep-orange lighten-2">Out: {{hashes.sha_256_output}}</v-chip>
-                            </v-row>
-                        </v-container>
                         <v-container>
-                        <v-row justify="space-between" >
-                            <v-btn text @click="e1 = 2">Back</v-btn>
-                            <v-btn v-if="!running" color="deep-orange lighten-2" @click="postImageJobAndRun()">Start</v-btn>
-                            <v-btn v-if="running" color="deep-orange lighten-2" @click="cancelImageJob">Cancel</v-btn>
-                        </v-row>
+                            <v-row justify="space-between" >
+                                <v-btn text @click="e1 = 1">Back</v-btn>
+                                <v-btn v-if="!running && !finishedJob" color="deep-orange lighten-2" @click="postImageJobAndRun()">Start</v-btn>
+                                <v-btn v-if="running" color="deep-orange lighten-2" @click="cancelImageJob">Cancel</v-btn>
+                                <v-btn v-if="finishedJob" color="deep-orange lighten-2" @click="clear">Finish</v-btn>
+                            </v-row>
                         </v-container>
                     </v-stepper-content>
                 </v-stepper-items>
@@ -213,7 +215,7 @@
                     >
                  Calculating best transfer options
             </v-row>
-            <v-progress-linear v-if="e1 === 3" class="mt-0" :indeterminate="running" :color="finisedJob ? transmissionError === '' ? 'green' : 'red' : 'deep-orange lighten-2'" :value="finisedJob ? 100 : 0"></v-progress-linear>
+            <v-progress-linear v-if="e1 === 3" class="mt-0" :indeterminate="running" :color="finishedJob ? transmissionError === '' ? 'green' : 'red' : 'deep-orange lighten-2'" :value="finishedJob ? 100 : 0"></v-progress-linear>
              </v-col>
          </v-row>
      </v-container>
@@ -236,7 +238,7 @@
               smartMode: true,
               remoteTransmission :true,
               running : false,
-              finisedJob :false,
+              finishedJob :false,
               currentJobId : "",
               consoleOutputDeviceOutput : null,
               consoleInputDeviceOutput : null,
@@ -262,6 +264,7 @@
               cachedImageOptions: null,
               textarea: null,
               transmissionError: "",
+              tab3panels: [0],
               hashes: {
                   md_5_input: "",
                   md_5_output: "",
@@ -276,6 +279,7 @@
       },
       watch: {
           currentInputDevice(){
+              this.currentInput = 0;
               this.triggerSmartMode();
           },
 
@@ -285,15 +289,15 @@
       },
       methods: {
           getCurrentInputDevice: function(){
-              let path = "";
+              let dev = "";
 
               if(this.currentInput === 0){
-                  path = this.currentInputDevice
+                  dev = this.currentInputDevice
               }else{
-                  path = this.currentInputDevice.partitions[this.currentInput - 1]
+                  dev = this.currentInputDevice.partitions[this.currentInput - 1]
               }
 
-              return path
+              return dev
           },
 
           toggleExpandedPartitions: function(){
@@ -350,10 +354,12 @@
           },
 
           postImageJobAndRun: function() {
+              //collapse panels
+              this.tab3panels = []
               this.currentJobId = "";
               this.consoleInputDeviceOutput = "";
               this.consoleOutputDeviceOutput = "";
-              this.finisedJob = false;
+              this.finishedJob = false;
               let path
               path = this.getCurrentInputDevice().name
 
@@ -365,12 +371,24 @@
 
           },
 
+          clear: function(){
+              this.currentJobId = "";
+              this.consoleInputDeviceOutput = "";
+              this.consoleOutputDeviceOutput = "";
+              this.finishedJob = false;
+              this.running = false;
+              this.e1 = 1;
+              //Restore default panel settings
+              this.tab3panels = [0]
+              this.currentInput = 0
+          },
+
           cancelImageJob: function(){
               HTTP.delete('image/' + this.currentJobId).then(response => {
                   if (response.status === 200){
                       this.running = false;
                       clearInterval(this.pollinHandler);
-                      this.finisedJob = false
+                      this.finishedJob = false
                   }
               })
           },
@@ -391,7 +409,9 @@
                       this.hashes = this.pollingResult.hashes;
                       this.hashResult = this.pollingResult.hash_result;
                       //if no error get and set Hashes here
-                      this.finisedJob = true
+                      this.finishedJob = true
+                      //collapse all panels to make space for the hashes
+                      this.tab3panels = []
                   }})
           },
 
