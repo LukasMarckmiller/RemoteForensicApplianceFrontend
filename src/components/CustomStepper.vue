@@ -381,6 +381,12 @@
               //Restore default panel settings
               this.tab3panels = [0]
               this.currentInput = 0
+              this.hashes.md_5_input = ""
+              this.hashes.md_5_output = ""
+              this.hashes.sha_256_input = ""
+              this.hashes.sha_256_output = ""
+              this.hashResult.md_5_valid = false
+              this.hashResult.sha_256_valid = false
           },
 
           cancelImageJob: function(){
@@ -449,7 +455,7 @@
               if (this.currentInputDevice !== ""){
                   this.smartModeProgress = true;
 
-                  HTTP.post('media/transfer',{name:this.getCurrentInputDevice().name, size:this.getCurrentInputDevice().size_bytes}).then(response => {
+                  HTTP.post('media/transfer',{name:this.getCurrentInputDevice().name, size:this.getCurrentInputDevice().size_bytes, image_options_presentation:this.cachedImageOptions}).then(response => {
                         this.cachedImageOptions = response.data;
                       if (this.cachedImageOptions.image_option.target === this.imageTargetLocal)
                       {
